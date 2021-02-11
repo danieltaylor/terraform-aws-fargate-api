@@ -12,10 +12,9 @@ locals {
   create_new_cluster = var.ecs_cluster_name == null
   cluster_name       = local.create_new_cluster ? var.app_name : var.ecs_cluster_name
   definitions        = concat([var.primary_container_definition], var.extra_container_definitions)
-  volumes = distinct(flatten([
-    for def in local.definitions :
-    def.efs_volume_mounts != null ? def.efs_volume_mounts : []
-  ]))
+  primary_volumes    = var.primary_container_definition.efs_volume_mounts != null ? var.primary_container_definition.efs_volume_mounts : []
+  extra_volumes      = [ for def in var.extra_container_definitions : def.efs_volume_mounts != null ? def.efs_volume_mounts : [] ]
+  volumes = distinct(flatten([primary_volumes, extra_volumes]))
   ssm_parameters = distinct(flatten([
     for def in local.definitions :
     values(def.secrets != null ? def.secrets : {})
